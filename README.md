@@ -1,7 +1,7 @@
 # mmdvm-sdr
 
 ----
-MMDVM firmware - ported for x86 / arm  - Tested on x86 Linux / RasPi 3 / PlutoSDR (embedded). 
+[MMDVM firmware](https://github.com/g4klx/mmdvm) by Johnathan Taylor G4KLX - ported for x86 / arm  - Tested on x86 Linux / RasPi 3 / PlutoSDR (embedded). 
 
 ----
 
@@ -76,13 +76,13 @@ pi_fm_rds -freq 144.5 -audio RXSamples.wav
 
 * IQ output (tested with LeanIIOTx + PlutoSDR should be possible with USRP / LimeSDR / bladeRF / hackRF)
 
- Process RXSamples.wav in GRC for upsampling to 1 MSps and FM modulation  (File Source -> Throttle -> Rational Resampler -> NBFM -> Filesink).
+     > Process RXSamples.wav in GRC for upsampling to 1 MSps and FM modulation  (File Source -> Throttle -> Rational Resampler -> NBFM -> Filesink).
 
- Generated IQ file can be played back in GRC using Plutosink or using LeanIIOTx on PlutoSDR
+     > Generated IQ file can be played back in GRC using Plutosink or using LeanIIOTx on PlutoSDR
 
- Install [LeanTRX](http://www.pabr.org/radio/leantrx/) on PlutoSDR 
+     > Install [LeanTRX](http://www.pabr.org/radio/leantrx/) on PlutoSDR 
 
- Copy generated IQ file <RXSamples.iq> to PlutoSDR /tmp (max size: ~256M) using scp
+     > Copy generated IQ file <RXSamples.iq> to PlutoSDR /tmp (max size: ~256M) using scp
 
 ```
 leaniiotx -s 1000000.0 --bw 200000.0 -f 144500000.0 -v -d --bufsize 0x8000 --nbufs 32 < RXSamples.iq
@@ -95,7 +95,7 @@ sox -t wav RXSamples.wav -r 24000 -c 1 -b 16 -e signed-integer - | fl2k_fm - -f 
 ```
 ----    
 ## Issues
-* MMDVMHost - RF queue overflow
+* MMDVMHost - [RF queue overflow ](https://github.com/g4klx/MMDVMHost/issues/418)
 * Fix SerialController in modem side.. CPU usage, gracious reinit….
 
 ----

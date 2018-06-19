@@ -1,7 +1,7 @@
 # mmdvm-sdr
 
 ----
-[MMDVM firmware](https://github.com/g4klx/mmdvm) by Johnathan Taylor G4KLX - ported for x86 / arm  - Tested on x86 Linux / RasPi 3 / PlutoSDR (embedded). 
+[MMDVM firmware](https://github.com/g4klx/mmdvm) by Johnathan Taylor G4KLX - ported for x86 / arm  - Tested on x86 Linux / RasPi 3 / PlutoSDR (embedded) / Android 6 (arm - rooted - w/ termux) . 
 
 ----
 
@@ -52,7 +52,7 @@ It will display the PTY endpoint, which has to be specified in the MMDVHost/MMDV
 ./MMDVMHost MMDVM.ini
 ```
 
-The pre-modulation audio samples are saved to disk in the mmdvm/build directory - **RXSamples.wav**. The samples can be modulated and transmitted using methods described in the *Use cases* section. Sample capture **RXSample-test.wav** can be used for TX testing.  
+The pre-modulation audio samples are saved to disk in the mmdvm/build directory - **RXSamples.wav**. The samples can be modulated and transmitted using methods described in the *Use cases* section. Sample capture **RXSample-test.wav** can be used for TX testing (use 48000 as input rate for sox).  
 
 ----
 ## Use cases:

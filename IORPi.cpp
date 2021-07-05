@@ -35,6 +35,48 @@
 #include <stdio.h>
 #include <pthread.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h> 
+int tcp_sock;
+struct sockaddr_in serv_addr;
+
+int tcp_connect()
+{
+    int portno, n;
+    
+    struct hostent *server;
+
+    portno = 5990;
+    tcp_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (tcp_sock < 0) 
+        perror("ERROR opening socket");
+    server = gethostbyname("127.0.0.1");
+    if (server == NULL) {
+        fprintf(stderr,"ERROR, no such host\n");
+    }
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    bcopy((char *)server->h_addr, 
+         (char *)&serv_addr.sin_addr.s_addr,
+         server->h_length);
+    serv_addr.sin_port = htons(portno);
+    while (connect(tcp_sock,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
+    {
+        perror("ERROR connecting");
+        usleep(2000);
+    }
+    printf("Connected to localhost 5990");
+
+
+
+
+    
+    return 0;
+}
+
+
 const uint16_t DC_OFFSET = 2048U;
 FILE* fptr;
 AudioInterface *audio_interface;
@@ -54,7 +96,8 @@ void CIO::initInt()
 void CIO::startInt()
 {
 	DEBUG1("IO Int start()");
-    audio_interface = new AudioInterface(24000);
+    //audio_interface = new AudioInterface(24000);
+    tcp_connect();
 
         //fptr = fopen("RXSamples.wav", "wb");
 
@@ -69,7 +112,7 @@ void* CIO::helper(void* arg)
 
   while (1)
   {
-    usleep(40);
+    usleep(2000);
     p->interrupt();
   }
 
@@ -95,9 +138,14 @@ void CIO::interrupt()
         if(audio_buf.size() >= 320)
         {
             short *samples = new short[320];
-            memcpy(samples, audio_buf.data(), 320*2);
-            audio_interface->write_short(samples, 320*2);
+            memcpy(samples, audio_buf.data(), 640);
+            int n = ::sendto(tcp_sock, samples, 640, 0, (struct sockaddr *) &serv_addr,sizeof(serv_addr));
+            if (n < 0) 
+            {
+                perror("ERROR writing to socket");
+            }
             audio_buf.clear();
+            delete[] samples;
             audio_buf.push_back(signed_sample);
         }
         else
@@ -167,6 +215,8 @@ void CIO::delayInt(unsigned int dly)
 {
   usleep(dly*1000);
 }
+
+
 
 #endif
 

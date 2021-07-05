@@ -22,6 +22,8 @@
 #include "Globals.h"
 #include "IO.h"
 #include <pthread.h>
+#include "audiointerface.h"
+#include <vector>
 
 #if defined(RPI)
 
@@ -35,8 +37,11 @@
 
 const uint16_t DC_OFFSET = 2048U;
 FILE* fptr;
+AudioInterface *audio_interface;
+std::vector<short> audio_buf;
 
-char wavheader[] = {0x52,0x49,0x46,0x46,0xb8,0xc0,0x8f,0x00,0x57,0x41,0x56,0x45,0x66,0x6d,0x74,0x20,0x10,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0xc0,0x5d,0x00,0x00,0x80,0xbb,0x00,0x00,0x02,0x00,0x10,0x00,0x64,0x61,0x74,0x61,0xff,0xff,0xff,0xff};
+
+unsigned char wavheader[] = {0x52,0x49,0x46,0x46,0xb8,0xc0,0x8f,0x00,0x57,0x41,0x56,0x45,0x66,0x6d,0x74,0x20,0x10,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0xc0,0x5d,0x00,0x00,0x80,0xbb,0x00,0x00,0x02,0x00,0x10,0x00,0x64,0x61,0x74,0x61,0xff,0xff,0xff,0xff};
 
 void CIO::initInt()
 {
@@ -49,10 +54,11 @@ void CIO::initInt()
 void CIO::startInt()
 {
 	DEBUG1("IO Int start()");
+    audio_interface = new AudioInterface(24000);
 
-        fptr = fopen("RXSamples.wav", "wb");
+        //fptr = fopen("RXSamples.wav", "wb");
 
-	::fwrite(wavheader, 44, 1, fptr); // pipe wave header for PiFmRDS
+	//::fwrite(wavheader, 44, 1, fptr); // pipe wave header for PiFmRDS
 
         ::pthread_create(&m_thread, NULL, helper, this);
 }
@@ -63,7 +69,7 @@ void* CIO::helper(void* arg)
 
   while (1)
   {
-    usleep(42);
+    usleep(40);
     p->interrupt();
   }
 
@@ -77,18 +83,36 @@ void CIO::interrupt()
     uint16_t sample = DC_OFFSET;
     uint8_t control = MARK_NONE;
 
-    m_txBuffer.get(sample, control);
+   while(m_txBuffer.get(sample, control))
+   {
 
-     sample *= 4;		// amplify by 12dB	
+     sample *= 5;		// amplify by 12dB	
+     short signed_sample = (short)sample;
 
-    fwrite(&sample, sizeof(uint16_t), 1, fptr);
-    fflush(fptr);
+    //fwrite(&sample, sizeof(uint16_t), 1, fptr);
+    //fflush(fptr);
+
+        if(audio_buf.size() >= 320)
+        {
+            short *samples = new short[320];
+            memcpy(samples, audio_buf.data(), 320*2);
+            audio_interface->write_short(samples, 320*2);
+            audio_buf.clear();
+            audio_buf.push_back(signed_sample);
+        }
+        else
+        {
+            audio_buf.push_back(signed_sample);
+        }
+   }
+
+    
 
 	
     //::write(1, &sample, sizeof(uint16_t));  // pipe out samples to stdout
 
     sample = 2048U;
-    m_rxBuffer.put(sample, control);
+    //m_rxBuffer.put(sample, control);
 
 #if defined(SEND_RSSI_DATA)
     m_rssiBuffer.put(ADC->ADC_CDR[RSSI_CDR_Chan]);

@@ -23,6 +23,7 @@
 
 #include "SampleRB.h"
 #include "RSSIRB.h"
+#include <zmq.hpp>
 
 class CIO {
 public:
@@ -102,6 +103,9 @@ private:
   volatile uint32_t    m_watchdog;
 
   bool                 m_lockout;
+  zmq::context_t m_zmqcontext;
+  zmq::socket_t m_zmqsocket;
+  std::vector<short> m_audiobuf;
 
   // Hardware specific routines
   void initInt();

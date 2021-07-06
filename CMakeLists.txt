@@ -11,5 +11,5 @@ add_definitions("-g -DRPI") # -mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-ar
 # be sure to include the current source directory for header files
 target_include_directories (mmdvm PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # add the following required libraries:
-target_link_libraries(mmdvm stdc++ m rt pthread pulse-simple)
+target_link_libraries(mmdvm stdc++ m rt pthread zmq)
 

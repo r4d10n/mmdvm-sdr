@@ -127,6 +127,9 @@ m_lockout(false)
   initInt();
   
   selfTest();
+  m_zmqcontext = zmq::context_t(1);
+  m_zmqsocket = zmq::socket_t(m_zmqcontext, ZMQ_PUSH);
+  m_zmqsocket.bind ("tcp://127.0.0.1:5990");
 }
 
 void CIO::selfTest()

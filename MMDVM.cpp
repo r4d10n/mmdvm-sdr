@@ -125,10 +125,7 @@ void loop()
   if (m_modemState == STATE_IDLE)
     cwIdTX.process();
   
-  if(m_modemState == STATE_IDLE)
-    usleep(200);
-  else
-      usleep(20);
+  usleep(20);
 }
 
 int main()

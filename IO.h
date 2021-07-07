@@ -35,13 +35,14 @@ public:
 
   void write(MMDVM_STATE mode, q15_t* samples, uint16_t length, const uint8_t* control = NULL);
 
-  uint16_t getSpace() const;
+  uint16_t getSpace();
 
   void setDecode(bool dcd);
   void setADCDetection(bool detect);
   void setMode();
   
   void interrupt();
+  void interruptRX();
 
   void setParameters(bool rxInvert, bool txInvert, bool pttInvert, uint8_t rxLevel, uint8_t cwIdTXLevel, uint8_t dstarTXLevel, uint8_t dmrTXLevel, uint8_t ysfTXLevel, uint8_t p25TXLevel, uint8_t nxdnLevel, int16_t txDCOffset, int16_t rxDCOffset);
 
@@ -61,6 +62,7 @@ private:
   bool                 m_started;
 
   pthread_t            m_thread;
+  pthread_t            m_threadRX;
 
   CSampleRB            m_rxBuffer;
   CSampleRB            m_txBuffer;
@@ -106,11 +108,18 @@ private:
   zmq::context_t m_zmqcontext;
   zmq::socket_t m_zmqsocket;
   std::vector<short> m_audiobuf;
+  
+  zmq::context_t m_zmqcontextRX;
+  zmq::socket_t m_zmqsocketRX;
+  std::vector<short> m_audiobufRX;
+  pthread_mutex_t m_TXlock;
+  pthread_mutex_t m_RXlock;
 
   // Hardware specific routines
   void initInt();
   void startInt();
   static void* helper(void* arg);
+  static void* helperRX(void* arg);
   bool getCOSInt();
 
   void setLEDInt(bool on);

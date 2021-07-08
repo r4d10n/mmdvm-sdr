@@ -39,7 +39,7 @@ public:
 
   void setDecode(bool dcd);
   void setADCDetection(bool detect);
-  void setMode();
+  void setMode(MMDVM_STATE state);
   
   void interrupt();
   void interruptRX();
@@ -114,6 +114,7 @@ private:
   std::vector<short> m_audiobufRX;
   pthread_mutex_t m_TXlock;
   pthread_mutex_t m_RXlock;
+  bool m_COSint;
 
   // Hardware specific routines
   void initInt();

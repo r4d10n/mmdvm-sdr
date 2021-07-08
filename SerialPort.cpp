@@ -361,6 +361,7 @@ uint8_t CSerialPort::setMode(const uint8_t* data, uint8_t length)
 
 void CSerialPort::setMode(MMDVM_STATE modemState)
 {
+    /*
   switch (modemState) {
     case STATE_DMR:
       DEBUG1("Mode set to DMR");
@@ -503,10 +504,67 @@ void CSerialPort::setMode(MMDVM_STATE modemState)
       // STATE_IDLE
       break;
   }
+  */
+    switch (modemState) {
+    case STATE_DMR:
+      DEBUG1("Mode set to DMR");
+      break;
+    case STATE_DSTAR:
+      DEBUG1("Mode set to D-Star");
+      break;
+    case STATE_YSF:
+      DEBUG1("Mode set to System Fusion");
+      break;
+    case STATE_P25:
+      DEBUG1("Mode set to P25");
+      break;
+    case STATE_NXDN:
+      DEBUG1("Mode set to NXDN");
+      break;
+    case STATE_DSTARCAL:
+      DEBUG1("Mode set to D-Star Calibrate");
+      break;
+    case STATE_DMRCAL:
+      DEBUG1("Mode set to DMR Calibrate");
+      break;
+    case STATE_RSSICAL:
+      DEBUG1("Mode set to RSSI Calibrate");
+      break;
+    case STATE_P25CAL1K:
+      DEBUG1("Mode set to P25 1011 Hz Calibrate");
+      break;
+    case STATE_DMRDMO1K:
+      DEBUG1("Mode set to DMR MS 1031 Hz Calibrate");
+      break;
+    case STATE_NXDNCAL1K:
+      DEBUG1("Mode set to NXDN 1031 Hz Calibrate");
+      break;
+    default:        // STATE_IDLE
+      DEBUG1("Mode set to Idle");
+      break;
+  }
+
+  if (modemState != STATE_DSTAR)
+    dstarRX.reset();
+
+  if (modemState != STATE_DMR) {
+    dmrIdleRX.reset();
+    dmrDMORX.reset();
+    dmrRX.reset();
+  }
+
+  if (modemState != STATE_YSF)
+    ysfRX.reset();
+
+  if (modemState != STATE_P25)
+    p25RX.reset();
+
+  if (modemState != STATE_NXDN)
+    nxdnRX.reset();
 
   m_modemState = modemState;
 
-  io.setMode();
+  io.setMode(modemState);
 }
 
 void CSerialPort::start()
@@ -691,7 +749,7 @@ void CSerialPort::process()
             break;
 
           case MMDVM_DMR_START:
-	    DEBUG1("Inside DMR START");
+	    //DEBUG1("Inside DMR START");
             if (m_dmrEnable) {
               err = 4U;
               if (m_len == 4U) {
@@ -713,7 +771,7 @@ void CSerialPort::process()
             break;
 
           case MMDVM_DMR_SHORTLC:
-            DEBUG1("Inside DMR SHORTLC");
+            //DEBUG1("Inside DMR SHORTLC");
             if (m_dmrEnable)
               err = dmrTX.writeShortLC(m_buffer + 3U, m_len - 3U);
             if (err != 0U) {
@@ -723,7 +781,7 @@ void CSerialPort::process()
             break;
 
           case MMDVM_DMR_ABORT:
-            DEBUG1("Inside DMR ABORT");
+            //DEBUG1("Inside DMR ABORT");
             if (m_dmrEnable)
               err = dmrTX.writeAbort(m_buffer + 3U, m_len - 3U);
             if (err != 0U) {

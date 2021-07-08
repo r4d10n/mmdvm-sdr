@@ -148,9 +148,7 @@ void CIO::interruptRX()
     int size = mq_message.size();
     if(size < 1)
         return;
-    usleep(size);
     
-    //printf("Received ZeroMQ data %d\n", size);
     ::pthread_mutex_lock(&m_RXlock);
     u_int16_t rx_buf_space = m_rxBuffer.getSpace();
     
@@ -159,11 +157,11 @@ void CIO::interruptRX()
         short signed_sample = 0;
         memcpy(&signed_sample, (unsigned char*)mq_message.data() + i, sizeof(short));
         //m_audiobufRX.push_back(signed_sample);
-        m_rxBuffer.put((u_int16_t)signed_sample, control);
+        m_rxBuffer.put((uint16_t)signed_sample, control);
     }
     ::pthread_mutex_unlock(&m_RXlock);
     return;
-    
+    /*
     printf("RX buffer space %d\n", (int)rx_buf_space);
     if(rx_buf_space >= 120 && m_audiobufRX.size() >= 120)
     {
@@ -176,11 +174,12 @@ void CIO::interruptRX()
         m_audiobufRX.erase(m_audiobufRX.begin(), m_audiobufRX.begin() + 120);
     }
     printf("Audio RX buffer size %d\n", (int)m_audiobufRX.size());
+    */
 }
 
 bool CIO::getCOSInt()
 {
-	return false;
+	return m_COSint;
 }
 
 void CIO::setLEDInt(bool on)
@@ -195,6 +194,7 @@ void CIO::setPTTInt(bool on)
 
 void CIO::setCOSInt(bool on)
 {
+    m_COSint = on;
 }
 
 void CIO::setDStarInt(bool on)

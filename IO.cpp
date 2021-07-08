@@ -127,6 +127,7 @@ m_lockout(false)
   initInt();
   
   selfTest();
+  setCOSInt(false);
   m_zmqcontext = zmq::context_t(1);
   m_zmqsocket = zmq::socket_t(m_zmqcontext, ZMQ_PUSH);
   m_zmqsocket.bind ("tcp://127.0.0.1:5990");
@@ -246,7 +247,7 @@ void CIO::start()
 
   m_started = true;
 
-  setMode();
+  setMode(STATE_IDLE);
 }
 
 void CIO::process()
@@ -259,7 +260,7 @@ void CIO::process()
         if (m_modemState == STATE_DMR && m_tx)
           dmrTX.setStart(false);
         m_modemState = STATE_IDLE;
-        setMode();
+        setMode(STATE_IDLE);
       }
 
       m_watchdog = 0U;
@@ -280,8 +281,9 @@ void CIO::process()
   }
 
 #if defined(USE_COS_AS_LOCKOUT)
-  m_lockout = getCOSInt();
+  //m_lockout = getCOSInt();
 #endif
+
     ::pthread_mutex_lock(&m_TXlock);
   // Switch off the transmitter if needed
   if (m_txBuffer.getData() == 0U && m_tx) {
@@ -312,14 +314,14 @@ void CIO::process()
       if (m_detect && (sample == 0U || sample == 4095U))
         m_adcOverflow++;
 
-      q15_t res1 = q15_t(sample) - m_rxDCOffset;
+      q15_t res1 = q15_t(sample);// - m_rxDCOffset;
       q31_t res2 = res1 * m_rxLevel;
       samples[i] = q15_t(__SSAT((res2 >> 15), 16));
     }
     ::pthread_mutex_unlock(&m_RXlock);
 
-    if (m_lockout)
-      return;
+    //if (m_lockout)
+    //  return;
 
 
 #if defined(USE_DCBLOCKER)
@@ -461,7 +463,6 @@ void CIO::process()
 
 void CIO::write(MMDVM_STATE mode, q15_t* samples, uint16_t length, const uint8_t* control)
 {
-//  DEBUG1("Inside CIO::write()");
 
   if (!m_started)
     return;
@@ -537,8 +538,10 @@ void CIO::setADCDetection(bool detect)
   m_detect = detect;
 }
 
-void CIO::setMode()
+void CIO::setMode(MMDVM_STATE state)
 {
+    if (state == m_modemState)
+        return;
 #if defined(ARDUINO_MODE_PINS)
   setDStarInt(m_modemState == STATE_DSTAR);
   setDMRInt(m_modemState   == STATE_DMR);
@@ -546,6 +549,7 @@ void CIO::setMode()
   setP25Int(m_modemState   == STATE_P25);
   setNXDNInt(m_modemState  == STATE_NXDN);
 #endif
+  m_modemState = state;
 }
 
 void CIO::setParameters(bool rxInvert, bool txInvert, bool pttInvert, uint8_t rxLevel, uint8_t cwIdTXLevel, uint8_t dstarTXLevel, uint8_t dmrTXLevel, uint8_t ysfTXLevel, uint8_t p25TXLevel, uint8_t nxdnTXLevel, int16_t txDCOffset, int16_t rxDCOffset)

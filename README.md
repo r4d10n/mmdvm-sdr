@@ -64,7 +64,7 @@ The RRC filtered pre-FM modulation audio samples are sent to GNU radio via ZeroM
 * Duplex/simplex DMR hotspot with a SDR device like the ADALM Pluto or LimeSDR, transmits both timeslots in duplex mode, but can receive only in DMO mode, which means any MS transmission will be picked up by MMDVM and sent to the net on timeslot 2. QRadioLink can then set up the duplex frequency pairs and bridge to the SDR device. GNU radio flowgraphs can be used as well with ZeroMQ flowgraphs. The frequency defined in MMDVM.ini are not necessarily the same as the SDR frequencies, it is up to you to set up the SDR correctly.
 See https://github.com/qradiolink/qradiolink/tree/mmdvm_integration for the QRadioLink integration code.
 
-https://github.com/qradiolink/qradiolink/tree/mmdvm_integration```
+```
 sox -r 24000 -t wav RXSamples.wav -r 48000 -t s16 - | dsd -i - -w DemodRXSamples.wav -v99
 ```
 ```
@@ -121,8 +121,9 @@ This code is a hack. Feel free to break, fix, push and merge !
 
 
 
-Licensing
+## Licensing
 ---------
+
 ZeroMQ and GNU radio integration code written by Adrian Musceac YO8RZZ, redistribute with same license (GPLv3) as
 the original MMDVM code by Jonathan Naylor G4KLX. 
 All copyrights on MMDVM and mmdvm-sdr by original authors apply.

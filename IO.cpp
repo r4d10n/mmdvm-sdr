@@ -406,7 +406,7 @@ void CIO::process()
         q15_t DMRVals[RX_BLOCK_SIZE];
         ::arm_fir_fast_q15(&m_rrcFilter, samples, DMRVals, RX_BLOCK_SIZE);
 
-        if (m_duplex) {
+        if (0) {
           // If the transmitter isn't on, use the DMR idle RX to detect the wakeup CSBKs
           if (m_tx)
             dmrRX.samples(DMRVals, rssi, control, RX_BLOCK_SIZE);

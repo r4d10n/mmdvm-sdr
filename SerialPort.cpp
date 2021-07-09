@@ -625,8 +625,6 @@ void CSerialPort::process()
               sendACK();
             else
               sendNAK(err);
-
-	    LogDebug("set config!");
             break;
 
           case MMDVM_SET_MODE:
@@ -635,7 +633,6 @@ void CSerialPort::process()
               sendACK();
             else
               sendNAK(err);
-	    LogDebug("set mode!");
             break;
 
           case MMDVM_SET_FREQ:

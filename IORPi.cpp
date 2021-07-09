@@ -125,15 +125,14 @@ void CIO::interrupt()
    ::pthread_mutex_unlock(&m_TXlock);
    
     sample = 2048U;
-    //m_rxBuffer.put(sample, control);
 
 #if defined(SEND_RSSI_DATA)
-    m_rssiBuffer.put(ADC->ADC_CDR[RSSI_CDR_Chan]);
+    //m_rssiBuffer.put(ADC->ADC_CDR[RSSI_CDR_Chan]);
 #else
-    m_rssiBuffer.put(0U);
+    //m_rssiBuffer.put(0U);
 #endif
 
-    m_watchdog++;
+    //m_watchdog++;
 	
 }
 
@@ -144,7 +143,7 @@ void CIO::interruptRX()
     uint8_t control = MARK_NONE;
     zmq::message_t mq_message;
     zmq::recv_result_t recv_result = m_zmqsocketRX.recv(mq_message, zmq::recv_flags::none);
-    //usleep(9600);
+    //usleep(500); // RX buffer overflows without the block_size change in IO::process()
     int size = mq_message.size();
     if(size < 1)
         return;
@@ -156,25 +155,11 @@ void CIO::interruptRX()
     {
         short signed_sample = 0;
         memcpy(&signed_sample, (unsigned char*)mq_message.data() + i, sizeof(short));
-        //m_audiobufRX.push_back(signed_sample);
         m_rxBuffer.put((uint16_t)signed_sample, control);
+        m_rssiBuffer.put(3U);
     }
     ::pthread_mutex_unlock(&m_RXlock);
     return;
-    /*
-    printf("RX buffer space %d\n", (int)rx_buf_space);
-    if(rx_buf_space >= 120 && m_audiobufRX.size() >= 120)
-    {
-        ::pthread_mutex_lock(&m_RXlock);
-        for(int i = 0;i < 120;i++)
-        {
-            m_rxBuffer.put((uint16_t)m_audiobufRX.at(i), control);
-        }
-        ::pthread_mutex_unlock(&m_RXlock);
-        m_audiobufRX.erase(m_audiobufRX.begin(), m_audiobufRX.begin() + 120);
-    }
-    printf("Audio RX buffer size %d\n", (int)m_audiobufRX.size());
-    */
 }
 
 bool CIO::getCOSInt()

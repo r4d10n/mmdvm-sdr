@@ -2,6 +2,8 @@
  *   Copyright (C) 2015,2016,2017,2018 by Jonathan Naylor G4KLX
  *   Copyright (C) 2015 by Jim Mclaughlin KI6ZUM
  *   Copyright (C) 2016 by Colin Durbridge G4EML
+ * 
+ *   GNU radio integration code written by Adrian Musceac YO8RZZ 2021
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -107,13 +109,13 @@ void CIO::interrupt()
         sample *= 5;		// amplify by 12dB	
         short signed_sample = (short)sample;
 
-        if(m_audiobuf.size() >= 240)
+        if(m_audiobuf.size() >= 720)
         {
-            zmq::message_t reply (240*sizeof(short));
-            memcpy (reply.data (), (unsigned char *)m_audiobuf.data(), 240*sizeof(short));
+            zmq::message_t reply (720*sizeof(short));
+            memcpy (reply.data (), (unsigned char *)m_audiobuf.data(), 720*sizeof(short));
             m_zmqsocket.send (reply, zmq::send_flags::dontwait);
-            usleep(9600);
-            m_audiobuf.erase(m_audiobuf.begin(), m_audiobuf.begin()+240);
+            usleep(9600 * 3);
+            m_audiobuf.erase(m_audiobuf.begin(), m_audiobuf.begin()+720);
             m_audiobuf.push_back(signed_sample);
         }
         else

@@ -127,6 +127,14 @@ m_lockout(false)
   initInt();
   
   selfTest();
+  setCOSInt(false);
+  m_zmqcontext = zmq::context_t(1);
+  m_zmqsocket = zmq::socket_t(m_zmqcontext, ZMQ_PUSH);
+  m_zmqsocket.bind ("tcp://127.0.0.1:5990");
+  
+  m_zmqcontextRX = zmq::context_t(1);
+  m_zmqsocketRX = zmq::socket_t(m_zmqcontextRX, ZMQ_PULL);
+  m_zmqsocketRX.connect ("tcp://127.0.0.1:5991");
 }
 
 void CIO::selfTest()
@@ -239,7 +247,7 @@ void CIO::start()
 
   m_started = true;
 
-  setMode();
+  setMode(STATE_IDLE);
 }
 
 void CIO::process()
@@ -252,7 +260,7 @@ void CIO::process()
         if (m_modemState == STATE_DMR && m_tx)
           dmrTX.setStart(false);
         m_modemState = STATE_IDLE;
-        setMode();
+        setMode(STATE_IDLE);
       }
 
       m_watchdog = 0U;
@@ -273,20 +281,30 @@ void CIO::process()
   }
 
 #if defined(USE_COS_AS_LOCKOUT)
-  m_lockout = getCOSInt();
+  //m_lockout = getCOSInt();
 #endif
 
+    ::pthread_mutex_lock(&m_TXlock);
   // Switch off the transmitter if needed
   if (m_txBuffer.getData() == 0U && m_tx) {
     m_tx = false;
     setPTTInt(m_pttInvert ? true : false);
   }
+  ::pthread_mutex_unlock(&m_TXlock);
 
-  if (m_rxBuffer.getData() >= RX_BLOCK_SIZE) {
+  ::pthread_mutex_lock(&m_RXlock);
+  u_int16_t block_size = m_rxBuffer.getData();
+  ::pthread_mutex_unlock(&m_RXlock);
+  
+  if (block_size >= RX_BLOCK_SIZE) {
+    uint16_t num_blocks = block_size / RX_BLOCK_SIZE;
+    for(uint16_t block_no = 0;block_no < num_blocks; block_no++)
+    {
     q15_t    samples[RX_BLOCK_SIZE];
     uint8_t  control[RX_BLOCK_SIZE];
     uint16_t rssi[RX_BLOCK_SIZE];
 
+    ::pthread_mutex_lock(&m_RXlock);
     for (uint16_t i = 0U; i < RX_BLOCK_SIZE; i++) {
       uint16_t sample;
       m_rxBuffer.get(sample, control[i]);
@@ -296,13 +314,14 @@ void CIO::process()
       if (m_detect && (sample == 0U || sample == 4095U))
         m_adcOverflow++;
 
-      q15_t res1 = q15_t(sample) - m_rxDCOffset;
+      q15_t res1 = q15_t(sample);// - m_rxDCOffset;
       q31_t res2 = res1 * m_rxLevel;
       samples[i] = q15_t(__SSAT((res2 >> 15), 16));
     }
+    ::pthread_mutex_unlock(&m_RXlock);
 
-    if (m_lockout)
-      return;
+    //if (m_lockout)
+    //  return;
 
 
 #if defined(USE_DCBLOCKER)
@@ -387,7 +406,7 @@ void CIO::process()
         q15_t DMRVals[RX_BLOCK_SIZE];
         ::arm_fir_fast_q15(&m_rrcFilter, samples, DMRVals, RX_BLOCK_SIZE);
 
-        if (m_duplex) {
+        if (0) {
           // If the transmitter isn't on, use the DMR idle RX to detect the wakeup CSBKs
           if (m_tx)
             dmrRX.samples(DMRVals, rssi, control, RX_BLOCK_SIZE);
@@ -439,11 +458,11 @@ void CIO::process()
       calRSSI.samples(rssi, RX_BLOCK_SIZE);
     }
   }
+  }
 }
 
 void CIO::write(MMDVM_STATE mode, q15_t* samples, uint16_t length, const uint8_t* control)
 {
-//  DEBUG1("Inside CIO::write()");
 
   if (!m_started)
     return;
@@ -478,7 +497,7 @@ void CIO::write(MMDVM_STATE mode, q15_t* samples, uint16_t length, const uint8_t
       txLevel = m_cwIdTXLevel;
       break;
   }
-
+    ::pthread_mutex_lock(&m_TXlock);
   for (uint16_t i = 0U; i < length; i++) {
     q31_t res1 = samples[i] * txLevel;
     q15_t res2 = q15_t(__SSAT((res1 >> 15), 16));
@@ -495,11 +514,15 @@ void CIO::write(MMDVM_STATE mode, q15_t* samples, uint16_t length, const uint8_t
    else
      m_txBuffer.put(res3, control[i]);
   }
+  ::pthread_mutex_unlock(&m_TXlock);
 }
 
-uint16_t CIO::getSpace() const
+uint16_t CIO::getSpace() 
 {
-  return m_txBuffer.getSpace();
+    ::pthread_mutex_lock(&m_TXlock);
+    u_int16_t space = m_txBuffer.getSpace();
+    ::pthread_mutex_unlock(&m_TXlock);
+  return space;
 }
 
 void CIO::setDecode(bool dcd)
@@ -515,8 +538,10 @@ void CIO::setADCDetection(bool detect)
   m_detect = detect;
 }
 
-void CIO::setMode()
+void CIO::setMode(MMDVM_STATE state)
 {
+    if (state == m_modemState)
+        return;
 #if defined(ARDUINO_MODE_PINS)
   setDStarInt(m_modemState == STATE_DSTAR);
   setDMRInt(m_modemState   == STATE_DMR);
@@ -524,6 +549,7 @@ void CIO::setMode()
   setP25Int(m_modemState   == STATE_P25);
   setNXDNInt(m_modemState  == STATE_NXDN);
 #endif
+  m_modemState = state;
 }
 
 void CIO::setParameters(bool rxInvert, bool txInvert, bool pttInvert, uint8_t rxLevel, uint8_t cwIdTXLevel, uint8_t dstarTXLevel, uint8_t dmrTXLevel, uint8_t ysfTXLevel, uint8_t p25TXLevel, uint8_t nxdnTXLevel, int16_t txDCOffset, int16_t rxDCOffset)
@@ -564,12 +590,18 @@ void CIO::getOverflow(bool& adcOverflow, bool& dacOverflow)
 
 bool CIO::hasTXOverflow()
 {
-  return m_txBuffer.hasOverflowed();
+    ::pthread_mutex_lock(&m_TXlock);
+    bool has_overflowed = m_txBuffer.hasOverflowed();
+    ::pthread_mutex_unlock(&m_TXlock);
+  return has_overflowed;
 }
 
 bool CIO::hasRXOverflow()
 {
-  return m_rxBuffer.hasOverflowed();
+    ::pthread_mutex_lock(&m_RXlock);
+    bool has_overflowed = m_rxBuffer.hasOverflowed();
+    ::pthread_mutex_unlock(&m_RXlock);
+  return has_overflowed;
 }
 
 void CIO::resetWatchdog()

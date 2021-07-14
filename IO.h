@@ -1,5 +1,7 @@
 /*
  *   Copyright (C) 2015,2016,2017,2018 by Jonathan Naylor G4KLX
+ * 
+ *   GNU radio integration code written by Adrian Musceac YO8RZZ 2021
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,6 +25,7 @@
 
 #include "SampleRB.h"
 #include "RSSIRB.h"
+#include <zmq.hpp>
 
 class CIO {
 public:
@@ -34,13 +37,14 @@ public:
 
   void write(MMDVM_STATE mode, q15_t* samples, uint16_t length, const uint8_t* control = NULL);
 
-  uint16_t getSpace() const;
+  uint16_t getSpace();
 
   void setDecode(bool dcd);
   void setADCDetection(bool detect);
-  void setMode();
+  void setMode(MMDVM_STATE state);
   
   void interrupt();
+  void interruptRX();
 
   void setParameters(bool rxInvert, bool txInvert, bool pttInvert, uint8_t rxLevel, uint8_t cwIdTXLevel, uint8_t dstarTXLevel, uint8_t dmrTXLevel, uint8_t ysfTXLevel, uint8_t p25TXLevel, uint8_t nxdnLevel, int16_t txDCOffset, int16_t rxDCOffset);
 
@@ -60,6 +64,7 @@ private:
   bool                 m_started;
 
   pthread_t            m_thread;
+  pthread_t            m_threadRX;
 
   CSampleRB            m_rxBuffer;
   CSampleRB            m_txBuffer;
@@ -102,11 +107,22 @@ private:
   volatile uint32_t    m_watchdog;
 
   bool                 m_lockout;
+  zmq::context_t m_zmqcontext;
+  zmq::socket_t m_zmqsocket;
+  std::vector<short> m_audiobuf;
+  
+  zmq::context_t m_zmqcontextRX;
+  zmq::socket_t m_zmqsocketRX;
+  std::vector<short> m_audiobufRX;
+  pthread_mutex_t m_TXlock;
+  pthread_mutex_t m_RXlock;
+  bool m_COSint;
 
   // Hardware specific routines
   void initInt();
   void startInt();
   static void* helper(void* arg);
+  static void* helperRX(void* arg);
   bool getCOSInt();
 
   void setLEDInt(bool on);

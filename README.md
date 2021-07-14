@@ -46,10 +46,25 @@ It will display the PTY endpoint, which has to be specified in the MMDVHost/MMDV
 2. Modify Modem.cpp around Line 120 from true to false [#L120](https://github.com/g4klx/MMDVMHost/blob/992b0f27ab5695a01fb43db69ed01ac2dcd47b5f/Modem.cpp#L120) 
 3. make
 4. Edit MMDVM.ini - Callsign, ID, Network - refer [MMDVM Setup](https://www.f5uii.net/en/installation-calibration-adjustment-tunning-mmdvm-mmdvmhost-raspberry-motorola-gm360/)
-5. In [Modem] section, point Modem port to the Virtual PTY (modify as suited), also enable Debug:
+5. In [Modem] section, point Modem port to the Virtual PTY (modify as suited), also enable RX invert and TX invery and Debug:
 ```     
-   Port=/home/pi/mmdvm-sdr/build/ttyMMDVM0
-   Debug=1
+    Port=/home/pi/mmdvm-sdr/build/ttyMMDVM0
+    TXInvert=1
+    RXInvert=1
+    PTTInvert=0
+    TXDelay=0
+    RXOffset=0
+    TXOffset=0
+    DMRDelay=0
+    RXLevel=100
+    TXLevel=100
+    RXDCOffset=0
+    TXDCOffset=0
+    RFLevel=100
+    RSSIMappingFile=RSSI.dat
+    UseCOSAsLockout=0
+    Trace=0
+    Debug=1
 ```
 6. Run MMDVMHost using the modified MMDVM.ini
 ```

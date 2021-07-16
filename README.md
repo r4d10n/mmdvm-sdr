@@ -77,8 +77,18 @@ The RRC filtered pre-FM modulation audio samples are sent to GNU radio via ZeroM
 ## Use cases:
 
 * Duplex/simplex DMR hotspot with a SDR device like the ADALM Pluto or LimeSDR, transmits both timeslots in duplex mode, but can receive only in DMO mode, which means any MS transmission will be picked up by MMDVM and sent to the net on timeslot 2. QRadioLink can then set up the duplex frequency pairs and bridge to the SDR device. GNU radio flowgraphs can be used as well with ZeroMQ flowgraphs. The frequency defined in MMDVM.ini are not necessarily the same as the SDR frequencies, it is up to you to set up the SDR correctly.
-See https://github.com/qradiolink/qradiolink/tree/mmdvm_integration for the QRadioLink integration code.
 
+    See https://github.com/qradiolink/qradiolink/tree/mmdvm_integration for the QRadioLink integration code.
+
+* GNU Radio Flowgraph for Duplex DMR Hotspot using PlutoSDR
+
+    [gr-mmdvm](https://github.com/r4d10n/mmdvm-sdr/tree/master/gr-mmdvm) directory contains example GNU Radio Flowgraph based on [kantooon](https://github.com/qradiolink/qradiolink)'s ZMQ implementation for setting up realtime Duplex DMR hotspot using PlutoSDR (other duplex SDRs should be possible too). Also includes [gr-dsd](https://github.com/argilo/gr-dsd) based decoder for decoding network traffic from MMDVMHost networks. 
+    
+    ![gr-mmdvm-flowgraph](https://imgur.com/bUChUFn.jpg)
+    
+    ![gr-mmdvm-ui](https://imgur.com/p1w0ods.jpg)
+
+* DSD monitor - Pipe audio to dsd (requires sox)
 ```
 sox -r 24000 -t wav RXSamples.wav -r 48000 -t s16 - | dsd -i - -w DemodRXSamples.wav -v99
 ```
@@ -116,16 +126,9 @@ leaniiotx -s 1000000.0 --bw 200000.0 -f 144500000.0 -v -d --bufsize 0x8000 --nbu
 sox -t wav RXSamples.wav -r 24000 -c 1 -b 16 -e signed-integer - | fl2k_fm - -f 32000 -s 100e6 -c 44.4781e6 -i 48000
 ```
 ----    
-## Issues
-* MMDVMHost - [RF queue overflow ](https://github.com/g4klx/MMDVMHost/issues/418)
-* Fix SerialController in modem side.. CPU usage, gracious reinit….
-
-----
 ## TODO:
-* Interface **rtlfm** for handling RX 
-* Seperate IO Stubs handling TX with PTT for PiNBFm / LeanIIOTx / etc.
-* IO Stub for generic IQ input/output [resampling + FM mod/demod] 
-* Merge with MMDVMHost [take out vpty/SerialController on both sides and directly invoke corresponding functions - optimize!]
+* Interface with SoapySDR for handling RX/TX
+* IO Stub for generic IQ input/output [resampling + FM mod/demod]
 
 ----
 ## Disclaimer
@@ -135,12 +138,12 @@ Standard emission warnings apply. Use Filtering while transmitting using PWM/DAC
 This code is a hack. Feel free to break, fix, push and merge ! 
 
 
-
+----
 ## Licensing
----------
 
 ZeroMQ and GNU radio integration code written by Adrian Musceac YO8RZZ, redistribute with same license (GPLv3) as
 the original MMDVM code by Jonathan Naylor G4KLX. 
+
 All copyrights on MMDVM and mmdvm-sdr by original authors apply.
 
 

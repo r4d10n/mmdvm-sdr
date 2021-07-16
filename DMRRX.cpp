@@ -19,6 +19,7 @@
 #include "Config.h"
 #include "Globals.h"
 #include "DMRRX.h"
+#include "Log.h"
 
 CDMRRX::CDMRRX() :
 m_slot1RX(false),

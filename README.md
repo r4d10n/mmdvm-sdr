@@ -8,11 +8,15 @@
 > Communicates with MMDVMHost using Virtual PTY (emulated serial port) in Linux. Requires single point modification in MMDVMHost code (disable RTS check).
 
 
-> Currently offline Tx only. Rx possible with appropriate IO stub (see TODO). 
+> Duplex/simplex DMR hotspot with a SDR device like the ADALM Pluto or LimeSDR, transmits both timeslots in duplex mode, but can receive only in DMO mode. Other digital modes can be added with minor effort.
 
 ----
 
 ## Install:
+
+Requires an additional dependency, libzmq for GNU radio integration. Install libzmq and libzmq-dev. On Debian Bullseye:
+
+    apt-get install libzmq3-dev libzmq5
 
 Clone, compile mmdvm-sdr
 
@@ -42,22 +46,39 @@ It will display the PTY endpoint, which has to be specified in the MMDVHost/MMDV
 2. Modify Modem.cpp around Line 120 from true to false [#L120](https://github.com/g4klx/MMDVMHost/blob/992b0f27ab5695a01fb43db69ed01ac2dcd47b5f/Modem.cpp#L120) 
 3. make
 4. Edit MMDVM.ini - Callsign, ID, Network - refer [MMDVM Setup](https://www.f5uii.net/en/installation-calibration-adjustment-tunning-mmdvm-mmdvmhost-raspberry-motorola-gm360/)
-5. In [Modem] section, point Modem port to the Virtual PTY (modify as suited), also enable Debug:
+5. In [Modem] section, point Modem port to the Virtual PTY (modify as suited), also enable RX invert and TX invery and Debug:
 ```     
-   Port=/home/pi/mmdvm-sdr/build/ttyMMDVM0
-   Debug=1
+    Port=/home/pi/mmdvm-sdr/build/ttyMMDVM0
+    TXInvert=1
+    RXInvert=1
+    PTTInvert=0
+    TXDelay=0
+    RXOffset=0
+    TXOffset=0
+    DMRDelay=0
+    RXLevel=100
+    TXLevel=100
+    RXDCOffset=0
+    TXDCOffset=0
+    RFLevel=100
+    RSSIMappingFile=RSSI.dat
+    UseCOSAsLockout=0
+    Trace=0
+    Debug=1
 ```
 6. Run MMDVMHost using the modified MMDVM.ini
 ```
 ./MMDVMHost MMDVM.ini
 ```
 
-The pre-modulation audio samples are saved to disk in the mmdvm/build directory - **RXSamples.wav**. The samples can be modulated and transmitted using methods described in the *Use cases* section. Sample capture **RXSample-test.wav** can be used for TX testing (use 48000 as input rate for sox).  
+The RRC filtered pre-FM modulation audio samples are sent to GNU radio via ZeroMQ, TCP ports 5990 and 5991 at a rate of 24000 samples per second baseband.
 
 ----
 ## Use cases:
 
-* DSD monitor - Pipe audio to dsd (requires sox)
+* Duplex/simplex DMR hotspot with a SDR device like the ADALM Pluto or LimeSDR, transmits both timeslots in duplex mode, but can receive only in DMO mode, which means any MS transmission will be picked up by MMDVM and sent to the net on timeslot 2. QRadioLink can then set up the duplex frequency pairs and bridge to the SDR device. GNU radio flowgraphs can be used as well with ZeroMQ flowgraphs. The frequency defined in MMDVM.ini are not necessarily the same as the SDR frequencies, it is up to you to set up the SDR correctly.
+See https://github.com/qradiolink/qradiolink/tree/mmdvm_integration for the QRadioLink integration code.
+
 ```
 sox -r 24000 -t wav RXSamples.wav -r 48000 -t s16 - | dsd -i - -w DemodRXSamples.wav -v99
 ```
@@ -112,6 +133,16 @@ sox -t wav RXSamples.wav -r 24000 -c 1 -b 16 -e signed-integer - | fl2k_fm - -f 
 Standard emission warnings apply. Use Filtering while transmitting using PWM/DAC modes.
 
 This code is a hack. Feel free to break, fix, push and merge ! 
+
+
+
+## Licensing
+---------
+
+ZeroMQ and GNU radio integration code written by Adrian Musceac YO8RZZ, redistribute with same license (GPLv3) as
+the original MMDVM code by Jonathan Naylor G4KLX. 
+All copyrights on MMDVM and mmdvm-sdr by original authors apply.
+
 
  
 

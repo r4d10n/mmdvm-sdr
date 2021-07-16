@@ -24,6 +24,7 @@
 #include "Globals.h"
 
 #include "Log.h"
+#include "unistd.h"
 
 // Global variables
 MMDVM_STATE m_modemState = STATE_IDLE;
@@ -123,6 +124,8 @@ void loop()
 
   if (m_modemState == STATE_IDLE)
     cwIdTX.process();
+  
+  usleep(20);
 }
 
 int main()

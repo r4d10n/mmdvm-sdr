@@ -744,7 +744,7 @@ blocks:
 - name: zeromq_pull_source_1
   id: zeromq_pull_source
   parameters:
-    address: tcp://127.0.0.1:5990
+    address: ipc:///tmp/mmdvm-tx.ipc
     affinity: ''
     alias: ''
     comment: ''
@@ -765,7 +765,7 @@ blocks:
 - name: zeromq_push_sink_0
   id: zeromq_push_sink
   parameters:
-    address: tcp://127.0.0.1:5991
+    address: ipc:///tmp/mmdvm-rx.ipc
     affinity: ''
     alias: ''
     comment: ''

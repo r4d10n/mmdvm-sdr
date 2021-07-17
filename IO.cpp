@@ -130,11 +130,11 @@ m_lockout(false)
   setCOSInt(false);
   m_zmqcontext = zmq::context_t(1);
   m_zmqsocket = zmq::socket_t(m_zmqcontext, ZMQ_PUSH);
-  m_zmqsocket.bind ("tcp://127.0.0.1:5990");
+  m_zmqsocket.bind ("ipc:///tmp/mmdvm-tx.ipc");
   
   m_zmqcontextRX = zmq::context_t(1);
   m_zmqsocketRX = zmq::socket_t(m_zmqcontextRX, ZMQ_PULL);
-  m_zmqsocketRX.connect ("tcp://127.0.0.1:5991");
+  m_zmqsocketRX.connect ("ipc:///tmp/mmdvm-rx.ipc");
 }
 
 void CIO::selfTest()

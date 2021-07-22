@@ -90,7 +90,11 @@ m_detect(false),
 m_adcOverflow(0U),
 m_dacOverflow(0U),
 m_watchdog(0U),
-m_lockout(false)
+m_lockout(false),
+m_zmqcontext(1),
+m_zmqsocket(m_zmqcontext, ZMQ_PUSH),
+m_zmqcontextRX(1),
+m_zmqsocketRX(m_zmqcontextRX, ZMQ_PULL)
 {
   ::memset(m_rrcState,      0x00U,  70U * sizeof(q15_t));
   ::memset(m_gaussianState, 0x00U,  40U * sizeof(q15_t));
@@ -128,12 +132,8 @@ m_lockout(false)
   
   selfTest();
   setCOSInt(false);
-  m_zmqcontext = zmq::context_t(1);
-  m_zmqsocket = zmq::socket_t(m_zmqcontext, ZMQ_PUSH);
-  m_zmqsocket.bind ("ipc:///tmp/mmdvm-tx.ipc");
   
-  m_zmqcontextRX = zmq::context_t(1);
-  m_zmqsocketRX = zmq::socket_t(m_zmqcontextRX, ZMQ_PULL);
+  m_zmqsocket.bind ("ipc:///tmp/mmdvm-tx.ipc");  
   m_zmqsocketRX.connect ("ipc:///tmp/mmdvm-rx.ipc");
 }
 
